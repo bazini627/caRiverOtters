@@ -36,19 +36,36 @@
 
         <script>
             mapboxgl.accessToken =
-                'pk.eyJ1IjoiYmF6aW5pNjI3IiwiYSI6ImNqdXhuMXFmMjBvdmMzemxqdHhsMzJvbDcifQ.gHwEMfos0CNbKkYbOtd95w'; 
+                'pk.eyJ1IjoiYmF6aW5pNjI3IiwiYSI6ImNqdXhuMXFmMjBvdmMzemxqdHhsMzJvbDcifQ.gHwEMfos0CNbKkYbOtd95w';
 
             var map = new mapboxgl.Map({
                 container: 'map',
                 style: 'mapbox://styles/mapbox/light-v9',
-                center: [-99.5182, 40.33077],
-                zoom: 4
+                center: [-119.348557, 37.949874],
+                zoom: 5.5
             });
 
             // Add zoom and rotation controls to the map.
             map.addControl(new mapboxgl.NavigationControl());
 
             map.on('load', function () {
+
+                // Lake polygon layer
+                map.addSource('lakes', {
+                    type: 'geojson',
+                    data: './data/ca-lakes.json'
+                });
+                map.addLayer({
+                    'id': 'lakes',
+                    'type': 'fill',
+                    'source': 'lakes',
+                    'layout': {
+                        'visibility': 'visible'
+                    },
+                    "paint": {
+                        'fill-color': '#4c4cff'
+                    },
+                });
 
                 // Otter point layer
                 map.addSource('otters', {
