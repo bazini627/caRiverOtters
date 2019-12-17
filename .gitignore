@@ -1,0 +1,14 @@
+# Shapefile
+*.dbf
+*.fix
+*.prj
+*.qix
+*.shp
+*.shx
+*.sbx
+*.cpg
+*.sbn
+*.xml
+
+# Zip File
+*.zip
