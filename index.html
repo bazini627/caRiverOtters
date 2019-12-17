@@ -9,7 +9,6 @@
     <!-- Style sheet for Mapbox GL -->
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
 
-
     <style>
         body {
             margin: 0;
@@ -24,67 +23,223 @@
             bottom: 0;
             right: 0;
         }
+
+        h1 {
+            position: absolute;
+            z-index: 650;
+            top: 10px;
+            left: 15px;
+            padding: 8px 15px;
+            margin: 0;
+            color: whitesmoke;
+            font-size: 1.5em;
+            background: gray;
+            border-radius: 5px
+        }
+
+        .map-overlay {
+            font-family: 'Sans-Serif';
+            font-size: 1em;
+            background-color: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+            border-radius: 3px;
+            position: absolute;
+            width: auto;
+            top: 500px;
+            left: 10px;
+            padding: 10px;
+            display: none;
+            z-index: 700;
+        }
     </style>
 </head>
 
 <body>
+    <h1>California River Otter Sightings</h1>
     <div id="map">
+        <div id='map-overlay' class='map-overlay'></div>
+    </div>
 
-        <!-- Mapbox GL source -->
-        <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
+    <!-- Mapbox GL source -->
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
 
+    <script>
+        mapboxgl.accessToken =
+            'pk.eyJ1IjoiYmF6aW5pNjI3IiwiYSI6ImNqdXhuMXFmMjBvdmMzemxqdHhsMzJvbDcifQ.gHwEMfos0CNbKkYbOtd95w';
 
-        <script>
-            mapboxgl.accessToken =
-                'pk.eyJ1IjoiYmF6aW5pNjI3IiwiYSI6ImNqdXhuMXFmMjBvdmMzemxqdHhsMzJvbDcifQ.gHwEMfos0CNbKkYbOtd95w';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v9',
+            center: [-119.348557, 37.949874],
+            zoom: 5.5
+        });
 
-            var map = new mapboxgl.Map({
-                container: 'map',
-                style: 'mapbox://styles/mapbox/light-v9',
-                center: [-119.348557, 37.949874],
-                zoom: 5.5
+        // Overlay that will hold point data info
+        var overlay = document.getElementById('map-overlay');
+
+        // Add zoom and rotation controls to the map.
+        map.addControl(new mapboxgl.NavigationControl());
+
+        map.on('load', function () {
+
+            // Lake polygon layer
+            map.addSource('lakes', {
+                type: 'geojson',
+                data: './data/ca-lakes.json'
+            });
+            map.addLayer({
+                'id': 'lakes',
+                'type': 'fill',
+                'source': 'lakes',
+                'layout': {
+                    'visibility': 'visible'
+                },
+                "paint": {
+                    'fill-color': '#4c4cff'
+                },
             });
 
-            // Add zoom and rotation controls to the map.
-            map.addControl(new mapboxgl.NavigationControl());
+            // Otter layer that will be clustered
+            map.addSource('otters', {
+                type: 'geojson',
+                data: './data/ca-otter-sightings.geojson',
+                cluster: true,
+                clusterMaxZoom: 14,
+                clusterRadius: 50
+            });
+            map.addLayer({
+                'id': 'otter-clusters',
+                'type': 'circle',
+                'source': 'otters',
+                filter: ['has', 'point_count'],
+                paint: {
+                    'circle-color': [
+                        'step',
+                        ['get', 'point_count'],
+                        '#c7eae5', // color for count less than 2
+                        2,
+                        '#80cdc1', // color for count between 2 and 8
+                        8,
+                        '#35978f', // color for count between 8 and 19
+                        19,
+                        '#01665e' // color for count greater than 19
+                    ],
+                    'circle-radius': [
+                        'step',
+                        ['get', 'point_count'],
+                        10, // 10px circle
+                        2, // when less than 2
+                        20, // 20px circle
+                        8, // when between 2 and 8 
+                        30, // 30px circle
+                        19, // when between 8 and 19
+                        40 // otherwise 40px circle
+                    ],
+                    'circle-opacity': .8
+                },
+                'layout': {
+                    'visibility': 'visible'
+                },
+            });
 
-            map.on('load', function () {
+            // Otter cluster
+            map.addLayer({
+                id: 'otter-cluster-count',
+                type: 'symbol',
+                source: 'otters',
+                filter: ["has", "point_count"],
+                layout: {
+                    "text-field": "{point_count_abbreviated}",
+                    "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+                    "text-size": 12,
+                    "visibility": "visible"
+                },
+                paint: {
+                    'text-color': 'white'
+                }
+            });
 
-                // Lake polygon layer
-                map.addSource('lakes', {
-                    type: 'geojson',
-                    data: './data/ca-lakes.json'
-                });
-                map.addLayer({
-                    'id': 'lakes',
-                    'type': 'fill',
-                    'source': 'lakes',
-                    'layout': {
-                        'visibility': 'visible'
-                    },
-                    "paint": {
-                        'fill-color': '#4c4cff'
-                    },
-                });
+            // Otter unclustered
+            map.addLayer({
+                id: 'otters-unclustered',
+                type: 'circle',
+                source: 'otters',
+                filter: ['!has', 'point_count'],
+                paint: {
+                    'circle-color': '#8c510a',
+                    'circle-radius': 5,
+                    'circle-stroke-width': 1,
+                },
+                'layout': {
+                    'visibility': 'visible'
+                },
+            });
 
-                // Otter point layer
-                map.addSource('otters', {
-                    type: 'geojson',
-                    data: './data/ca-otter-sightings.geojson'
-                });
-                map.addLayer({
-                    'id': 'otters',
-                    'type': 'circle',
-                    'source': 'otters',
-                    'layout': {
-                        'visibility': 'visible'
-                    },
-                    "paint": {
-                        'circle-color': '#654321'
-                    },
+            // inspect an otter cluster on click
+            map.on('click', 'otter-clusters', function (e) {
+                var features = map.queryRenderedFeatures(e.point, { layers: ['otter-clusters'] });
+                var clusterId = features[0].properties.cluster_id;
+                map.getSource('otters').getClusterExpansionZoom(clusterId, function (err, zoom) {
+                    if (err)
+                        return;
+
+                    map.easeTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
                 });
             });
-        </script>
+
+            // Function to pass mouseenter
+            var pointerEnter = function (e) {
+                //console.log(e);
+                // Query all the rendered points in the view
+                var features = map.queryRenderedFeatures(e.point, {
+                    layers: ['otters-unclustered']
+                });
+
+                // Shorthand for hovered feature
+                var pointFeature = e.features[0];
+                console.log(pointFeature)
+
+                // Change the cursor to a point to notify user some interactivity may be available
+                map.getCanvas().style.cursor = 'pointer';
+
+                // Empty the overlay so old data isn't stored
+                overlay.innerHTML = '';
+
+                // Make overlay text bold
+                var infoContent = document.createElement('strong');
+                // Allow newline ('/r/n') in textContent
+                infoContent.setAttribute('style', 'white-space: pre;');
+
+
+                // Content of overlay.  Need to use backtics here to get a feature properties
+                infoContent.textContent = `Region: ${pointFeature.properties.Region}\r\n`;
+                infoContent.textContent += `Site: ${pointFeature.properties.Site_Name}\r\n`;
+                infoContent.textContent += `Otters Found: ${pointFeature.properties.Otters_Found}`;
+
+                // Add the content to the overlay
+                overlay.appendChild(infoContent);
+                overlay.style.display = 'block'
+            }
+
+            var pointerLeave = function (e) {
+
+                // Query all the rendered points in the view
+                var features = map.queryRenderedFeatures(e.point, {
+                    layers: ['otters-unclustered']
+                });
+
+                // Change the cursor to a point to notify user some interactivity may be available
+                map.getCanvas().style.cursor = '';
+                overlay.style.display = 'none';
+            }
+
+            map.on('mouseenter', 'otters-unclustered', pointerEnter)
+            map.on('mouseleave', 'otters-unclustered', pointerLeave)
+        });
+    </script>
 </body>
 
 </html>
