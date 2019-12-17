@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8' />
+    <title>CA River Otter Sightings</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+    <!-- Style sheet for Mapbox GL -->
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
+
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Sans-Serif;
+        }
+
+        #map {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            bottom: 0;
+            right: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map">
+
+        <!-- Mapbox GL source -->
+        <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
+
+
+        <script>
+            mapboxgl.accessToken =
+                'pk.eyJ1IjoiYmF6aW5pNjI3IiwiYSI6ImNqdXhuMXFmMjBvdmMzemxqdHhsMzJvbDcifQ.gHwEMfos0CNbKkYbOtd95w'; 
+
+            var map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/light-v9',
+                center: [-99.5182, 40.33077],
+                zoom: 4
+            });
+
+            // Add zoom and rotation controls to the map.
+            map.addControl(new mapboxgl.NavigationControl());
+
+            map.on('load', function () {
+
+                // Otter point layer
+                map.addSource('otters', {
+                    type: 'geojson',
+                    data: './data/ca-otter-sightings.geojson'
+                });
+                map.addLayer({
+                    'id': 'otters',
+                    'type': 'circle',
+                    'source': 'otters',
+                    'layout': {
+                        'visibility': 'visible'
+                    },
+                    "paint": {
+                        'circle-color': '#654321'
+                    },
+                });
+            });
+        </script>
+</body>
+
+</html>
